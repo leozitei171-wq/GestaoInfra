@@ -71,7 +71,7 @@ public class GeocodificacaoController : Controller
     [HttpGet]
     public async Task<IActionResult> Reverso(double lat, double lng, CancellationToken ct)
     {
-        if (!double.IsFinite(lat) || !double.IsFinite(lng) || lat is < -90 or > 90 || lng is < -180 or > 180)
+        if (!ModelState.IsValid || !double.IsFinite(lat) || !double.IsFinite(lng) || lat is < -90 or > 90 || lng is < -180 or > 180)
             return Erro(400, "Coordenadas inválidas.");
 
         var cidade = await CidadeDaPrefeituraAsync(ct);
