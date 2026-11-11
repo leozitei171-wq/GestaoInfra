@@ -1,0 +1,103 @@
+@using SistemaGestaoInfra.Domain.Common
+@using SistemaGestaoInfra.Web.Controllers
+@model AlertasViewModel
+@{
+    var pt = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+    string Cor(string nivel) => nivel switch
+    {
+        NivelAlerta.Critico => "text-bg-danger",
+        NivelAlerta.Atencao => "text-bg-warning",
+        NivelAlerta.Vencimento => "text-bg-info",
+        _ => "text-bg-secondary"
+    };
+}
+
+<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+    <p class="mb-0 text-muted">
+        Total: <strong>@Model.Total</strong> alerta(s) · Não lidos: <strong>@Model.NaoLidos</strong>
+    </p>
+    <div class="form-check form-switch mb-0 ms-auto">
+        <input class="form-check-input" type="checkbox" role="switch" id="so-nao-lidos"
+               checked="@Model.SomenteNaoLidos"
+               onchange="location.href = '@Url.Action("Index", new { somenteNaoLidos = "__V__" })'.replace('__V__', this.checked)" />
+        <label class="form-check-label" for="so-nao-lidos">Somente não lidos</label>
+    </div>
+    <a asp-controller="Indicadores" asp-action="Index" class="btn btn-sm btn-outline-secondary">Voltar aos indicadores</a>
+</div>
+
+<div class="card">
+    @if (Model.Itens.Count == 0)
+    {
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-bell-slash fs-1 d-block mb-2" aria-hidden="true"></i>
+            Nenhum alerta @(Model.SomenteNaoLidos ? "não lido" : "registrado").
+        </div>
+    }
+    else
+    {
+        <form asp-action="MarcarLidos" method="post">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="text-center" style="width:40px">
+                                <input type="checkbox" id="marcar-todos" class="form-check-input" aria-label="Selecionar todos" />
+                            </th>
+                            <th scope="col">Quando</th>
+                            <th scope="col">Contrato</th>
+                            <th scope="col">Fornecedor</th>
+                            <th scope="col">Nível</th>
+                            <th scope="col" class="text-end">% uso</th>
+                            <th scope="col">Mensagem</th>
+                            <th scope="col">Lido</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.Itens)
+                        {
+                            <tr class="@(a.Lido ? "text-muted" : "")">
+                                <td class="text-center">
+                                    @if (!a.Lido)
+                                    {
+                                        <input type="checkbox" name="ids" value="@a.Id" class="form-check-input sel-alerta" aria-label="Selecionar alerta @a.Id" />
+                                    }
+                                </td>
+                                <td class="text-nowrap">@a.Quando.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                <td><a asp-controller="Contratos" asp-action="Detalhe" asp-route-id="@a.ContratoId">@a.Contrato</a></td>
+                                <td>@a.Fornecedor</td>
+                                <td><span class="badge @Cor(a.Nivel)">@NivelAlerta.Rotulo(a.Nivel)</span></td>
+                                <td class="text-end">@a.PercentualUso.ToString("0.##", pt)%</td>
+                                <td>@a.Mensagem</td>
+                                <td>
+                                    @if (a.Lido) { <span class="badge text-bg-light border">Sim</span> }
+                                    else { <span class="badge text-bg-warning">Não</span> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer d-flex flex-wrap align-items-center gap-2">
+                <button type="submit" class="btn btn-sm btn-primary">Marcar selecionados como lidos</button>
+                @if (Model.TotalPaginas > 1)
+                {
+                    <span class="ms-auto small text-muted">Página @Model.Pagina de @Model.TotalPaginas</span>
+                    <a class="btn btn-sm btn-outline-secondary @(Model.Pagina <= 1 ? "disabled" : "")" asp-action="Index" asp-route-pagina="@(Model.Pagina - 1)" asp-route-somenteNaoLidos="@Model.SomenteNaoLidos">Anterior</a>
+                    <a class="btn btn-sm btn-outline-secondary @(Model.Pagina >= Model.TotalPaginas ? "disabled" : "")" asp-action="Index" asp-route-pagina="@(Model.Pagina + 1)" asp-route-somenteNaoLidos="@Model.SomenteNaoLidos">Próxima</a>
+                }
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var mestre = document.getElementById('marcar-todos');
+            if (!mestre) return;
+            mestre.addEventListener('change', function () {
+                document.querySelectorAll('.sel-alerta').forEach(function (c) { c.checked = mestre.checked; });
+            });
+        })();
+    </script>
+}

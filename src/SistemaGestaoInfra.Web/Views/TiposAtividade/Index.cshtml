@@ -1,0 +1,55 @@
+@model IReadOnlyList<SistemaGestaoInfra.Domain.Entities.TipoAtividade>
+
+<div class="card">
+    <div class="card-header d-flex align-items-center">
+        <span class="me-auto">@Model.Count tipo(s) cadastrado(s)</span>
+        <a asp-action="Novo" class="btn btn-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Novo tipo</a>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="card-body text-center text-muted py-5">Nenhum tipo de atividade cadastrado.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Descrição</th>
+                        <th scope="col">Setor</th>
+                        <th scope="col">Situação</th>
+                        <th scope="col" class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model)
+                    {
+                        <tr class="@(t.Ativo ? "" : "text-muted")">
+                            <td><code>@t.Codigo</code></td>
+                            <td>@t.Descricao</td>
+                            <td>@(t.Setor is null ? "—" : t.Setor.Codigo)</td>
+                            <td>
+                                <span class="badge @(t.Ativo ? "text-bg-success" : "text-bg-secondary")">
+                                    @(t.Ativo ? "Ativo" : "Inativo")
+                                </span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Editar" asp-route-id="@t.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i> Editar
+                                </a>
+                                <form asp-action="Excluir" asp-route-id="@t.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Excluir o tipo @t.Codigo?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash" aria-hidden="true"></i> Excluir
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

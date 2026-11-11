@@ -1,0 +1,69 @@
+# Zitei — Sistema de Gestão de Infraestrutura
+#
+# Subir tudo:        docker compose up -d --build
+# Só o banco (dev):  docker compose up -d postgres   (e rode a app com "dotnet run")
+# Ver logs:          docker compose logs -f web
+# Parar:             docker compose down            (os dados ficam nos volumes)
+#
+# As variáveis vêm do arquivo ".env" (modelo em ".env.example").
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sgi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${SGI_DB_USER:-sgi}
+      POSTGRES_PASSWORD: ${SGI_DB_PASSWORD:?defina SGI_DB_PASSWORD no arquivo .env}
+      POSTGRES_DB: ${SGI_DB_NAME:-sistema_gestao_infra}
+    ports:
+      # Apenas no próprio computador (para "dotnet run" e ferramentas). Não fica exposto à rede.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - sgi_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SGI_DB_USER:-sgi} -d ${SGI_DB_NAME:-sistema_gestao_infra}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zitei-web:latest
+    container_name: sgi-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${SGI_WEB_PORT:-8080}:8080"
+    environment:
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${SGI_DB_NAME:-sistema_gestao_infra};Username=${SGI_DB_USER:-sgi};Password=${SGI_DB_PASSWORD}"
+      Seed__AdminPassword: ${SGI_ADMIN_PASSWORD:-}
+      ReverseProxy__Habilitar: ${SGI_REVERSE_PROXY:-false}
+      # O TLS é terminado por um proxy na frente; dentro do container a app fala HTTP.
+      RedirecionarHttps: "false"
+    volumes:
+      - sgi_data:/app/App_Data
+    # Endurecimento: sistema de arquivos somente leitura (exceto /tmp e o volume de dados),
+    # sem capacidades extras e sem poder ganhar privilégios.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # A imagem não tem curl/wget; usa o bash para fazer um GET em /health.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q '200'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  sgi_pgdata:
+  sgi_data:

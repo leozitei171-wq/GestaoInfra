@@ -1,0 +1,307 @@
+@model AtividadeDetalheViewModel
+@{
+    var temLocal = Model.Latitude.HasValue && Model.Longitude.HasValue;
+    var podeLocalizar = User.IsInRole("Admin") || User.IsInRole("Gestor") || User.IsInRole("Servidor");
+    var usaMapa = temLocal || podeLocalizar;
+}
+
+@section Styles {
+    @if (usaMapa)
+    {
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+              integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    }
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center">
+                <span class="me-auto">Atividade #@Model.Id</span>
+                <span class="badge rounded-pill" style="background:@Model.CorStatus;color:#111">@Model.Status</span>
+            </div>
+            <div class="card-body">
+                <p class="fs-6" style="white-space:pre-wrap">@Model.Descricao</p>
+                <hr />
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Tipo</dt>
+                    <dd class="col-sm-8">@Model.Tipo</dd>
+
+                    <dt class="col-sm-4">Setor</dt>
+                    <dd class="col-sm-8">@(Model.Setor ?? "—")</dd>
+
+                    <dt class="col-sm-4">Prioridade</dt>
+                    <dd class="col-sm-8">@Model.Prioridade</dd>
+
+                    <dt class="col-sm-4">Progresso</dt>
+                    <dd class="col-sm-8">
+                        <div class="progress mb-1" role="progressbar" aria-label="Progresso"
+                             aria-valuenow="@Model.Progresso" aria-valuemin="0" aria-valuemax="100" style="height:8px">
+                            <div class="progress-bar" style="width:@Model.Progresso%"></div>
+                        </div>
+                        <small class="text-muted">@Model.Progresso%</small>
+                    </dd>
+
+                    <dt class="col-sm-4">Endereço</dt>
+                    <dd class="col-sm-8">@(Model.Endereco ?? "—")</dd>
+
+                    @if (Model.Requerimento)
+                    {
+                        <dt class="col-sm-4">Requerimento</dt>
+                        <dd class="col-sm-8">
+                            nº @Model.NumeroRequerimento
+                            @if (Model.TemArquivoRequerimento)
+                            {
+                                <a asp-action="Requerimento" asp-route-id="@Model.Id" target="_blank" rel="noopener"
+                                   class="ms-2 small"><i class="bi bi-paperclip" aria-hidden="true"></i> Ver anexo</a>
+                            }
+                        </dd>
+                    }
+
+                    <dt class="col-sm-4">Aberto por</dt>
+                    <dd class="col-sm-8">@(Model.AbertoPor ?? "—")</dd>
+
+                    <dt class="col-sm-4">Abertura</dt>
+                    <dd class="col-sm-8">@Model.CriadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                    <dt class="col-sm-4">Início previsto</dt>
+                    <dd class="col-sm-8">@(Model.DataInicioPrevisto?.ToString("dd/MM/yyyy") ?? "—")</dd>
+
+                    <dt class="col-sm-4">Fim previsto</dt>
+                    <dd class="col-sm-8">
+                        @(Model.DataFimPrevisto?.ToString("dd/MM/yyyy") ?? "—")
+                        @if (Model.StatusCodigo == "ATRASADA")
+                        {
+                            <span class="badge text-bg-danger ms-1">prazo vencido</span>
+                        }
+                    </dd>
+
+                    @if (Model.DataInicioReal is not null)
+                    {
+                        <dt class="col-sm-4">Execução iniciada em</dt>
+                        <dd class="col-sm-8">@Model.DataInicioReal.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    }
+
+                    @if (Model.DataConclusao is not null)
+                    {
+                        <dt class="col-sm-4">Concluída em</dt>
+                        <dd class="col-sm-8">@Model.DataConclusao.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.MotivoNegativa))
+                    {
+                        <dt class="col-sm-4">Motivo da negativa</dt>
+                        <dd class="col-sm-8">@Model.MotivoNegativa</dd>
+                    }
+                </dl>
+            </div>
+            <div class="card-footer">
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Voltar à lista
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        @{
+            var ehGestor = User.IsInRole("Admin") || User.IsInRole("Gestor");
+            var ehExecutor = ehGestor || User.IsInRole("Servidor");
+            var podeProgramar = ehGestor && FluxoAtividade.PodeProgramar(Model.StatusCodigo);
+            var podeIniciar = ehExecutor && FluxoAtividade.PodeIniciar(Model.StatusCodigo, Model.JaIniciada);
+            var podeProgresso = ehExecutor && FluxoAtividade.PodeAtualizarProgresso(Model.StatusCodigo, Model.JaIniciada);
+            var podeConcluir = ehExecutor && FluxoAtividade.PodeConcluir(Model.StatusCodigo);
+            var podeNegar = ehGestor && FluxoAtividade.PodeNegar(Model.StatusCodigo);
+            var hoje = DateTime.Now.ToString("yyyy-MM-dd");
+        }
+
+        @if (podeProgramar || podeIniciar || podeProgresso || podeConcluir || podeNegar)
+        {
+            <div class="card mb-3">
+                <div class="card-header">Ações</div>
+                <div class="card-body d-grid gap-3">
+                    @if (podeProgramar)
+                    {
+                        <form asp-action="Programar" asp-route-id="@Model.Id" method="post" class="border rounded p-3">
+                            <div class="fw-semibold mb-2">@(Model.DataFimPrevisto is null ? "Programar" : "Reprogramar")</div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label for="prog-inicio" class="form-label small mb-1">Início previsto</label>
+                                    <input type="date" id="prog-inicio" name="inicio" class="form-control form-control-sm"
+                                           value="@Model.DataInicioPrevisto?.ToString("yyyy-MM-dd")" />
+                                </div>
+                                <div class="col-6">
+                                    <label for="prog-fim" class="form-label small mb-1">Fim previsto <span class="text-danger">*</span></label>
+                                    <input type="date" id="prog-fim" name="fim" class="form-control form-control-sm" required min="@hoje"
+                                           value="@Model.DataFimPrevisto?.ToString("yyyy-MM-dd")" />
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary">Salvar programação</button>
+                        </form>
+                    }
+
+                    @if (podeIniciar)
+                    {
+                        <form asp-action="Iniciar" asp-route-id="@Model.Id" method="post">
+                            <button type="submit" class="btn btn-warning w-100"><i class="bi bi-play-fill me-1" aria-hidden="true"></i>Iniciar execução</button>
+                        </form>
+                    }
+
+                    @if (podeProgresso)
+                    {
+                        <form asp-action="Progresso" asp-route-id="@Model.Id" method="post" class="border rounded p-3">
+                            <label for="prog-pct" class="form-label fw-semibold">Progresso: <output id="prog-pct-valor">@Model.Progresso</output>%</label>
+                            <input type="range" id="prog-pct" name="progresso" min="0" max="99" value="@Math.Min(Model.Progresso, 99)" class="form-range"
+                                   oninput="document.getElementById('prog-pct-valor').textContent = this.value" />
+                            <button type="submit" class="btn btn-sm btn-primary">Atualizar progresso</button>
+                        </form>
+                    }
+
+                    @if (podeConcluir)
+                    {
+                        <form asp-action="Concluir" asp-route-id="@Model.Id" method="post"
+                              onsubmit="return confirm('Concluir a atividade #@Model.Id?');">
+                            <button type="submit" class="btn btn-success w-100"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Concluir atividade</button>
+                        </form>
+                    }
+
+                    @if (podeNegar)
+                    {
+                        <form asp-action="Negar" asp-route-id="@Model.Id" method="post" class="border border-danger-subtle rounded p-3">
+                            <label for="neg-motivo" class="form-label fw-semibold text-danger">Negar atividade</label>
+                            <textarea id="neg-motivo" name="motivo" class="form-control form-control-sm mb-2" rows="2" maxlength="500"
+                                      placeholder="Motivo da negativa (obrigatório)" required minlength="5"></textarea>
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Negar</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+        @if (Model.Servicos.Count > 0 || Model.OpcoesServico.Count > 0)
+        {
+            var ptc = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+            <div class="card mb-3">
+                <div class="card-header d-flex align-items-center">
+                    <span class="me-auto">Serviços de contrato</span>
+                    <span class="badge text-bg-light border">Custo: @Model.CustoTotal.ToString("C2", ptc)</span>
+                </div>
+                @if (Model.Servicos.Count > 0)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light"><tr><th>Contrato / serviço</th><th class="text-end">Qtd</th><th class="text-end">Custo</th><th></th></tr></thead>
+                            <tbody>
+                                @foreach (var s in Model.Servicos)
+                                {
+                                    <tr>
+                                        <td>@s.Contrato · @s.Servico <small class="text-muted">(@s.Medicao)</small></td>
+                                        <td class="text-end">@s.Quantidade.ToString("0.####", ptc)</td>
+                                        <td class="text-end">@s.Custo.ToString("C2", ptc)</td>
+                                        <td class="text-end">
+                                            @if (ehGestor)
+                                            {
+                                                <form asp-action="RemoverServico" asp-route-id="@Model.Id" asp-route-servicoId="@s.Id" method="post"
+                                                      onsubmit="return confirm('Remover este lançamento?');">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0" aria-label="Remover lançamento"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                @if (Model.OpcoesServico.Count > 0)
+                {
+                    <form asp-action="LancarServico" asp-route-id="@Model.Id" method="post" class="card-body border-top">
+                        <label for="srv-item" class="form-label small mb-1">Lançar serviço executado</label>
+                        <select id="srv-item" name="contratoServicoId" asp-items="Model.OpcoesServico" class="form-select form-select-sm mb-2"></select>
+                        <div class="input-group input-group-sm">
+                            <input name="quantidade" class="form-control" inputmode="decimal" placeholder="Quantidade" aria-label="Quantidade executada" required />
+                            <button type="submit" class="btn btn-primary">Lançar</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        }
+
+        @if (Model.TemFoto)
+        {
+            <div class="card mb-3">
+                <div class="card-header">Foto de evidência</div>
+                <a asp-action="Foto" asp-route-id="@Model.Id" target="_blank" rel="noopener">
+                    <img src="@Url.Action("Foto", new { id = Model.Id })" alt="Foto de evidência da atividade @Model.Id"
+                         class="img-fluid w-100 rounded-bottom" />
+                </a>
+            </div>
+        }
+
+        @if (usaMapa)
+        {
+            <div class="card">
+                <div class="card-header">Localização</div>
+                @if (!temLocal)
+                {
+                    <div class="alert alert-warning rounded-0 border-0 border-bottom mb-0 py-2 small" role="status">
+                        <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>
+                        Esta atividade ainda <strong>não tem localização</strong>, por isso não aparece no mapa geral.
+                        @if (podeLocalizar) { <span>Clique no mapa abaixo para marcar o ponto.</span> }
+                    </div>
+                }
+                <div id="mapa-detalhe" style="height:260px" role="application"
+                     aria-label="@(podeLocalizar ? "Mapa para marcar a localização da atividade" : "Mapa com a localização da atividade")"></div>
+                @if (podeLocalizar)
+                {
+                    <form asp-action="DefinirLocalizacao" asp-route-id="@Model.Id" method="post" class="card-body d-flex flex-wrap align-items-center gap-2 border-top">
+                        <input type="hidden" name="latitude" id="loc-lat" />
+                        <input type="hidden" name="longitude" id="loc-lng" />
+                        <span class="small text-muted me-auto" id="loc-texto">Clique no mapa para @(temLocal ? "mudar" : "marcar") o ponto.</span>
+                        <button type="submit" class="btn btn-sm btn-primary" id="loc-salvar" disabled>
+                            <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>Salvar localização
+                        </button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @if (usaMapa)
+    {
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+                integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script>
+            (function () {
+                var temLocal = @(temLocal ? "true" : "false");
+                var podeLocalizar = @(podeLocalizar ? "true" : "false");
+                var centro = temLocal
+                    ? [@(Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0"),
+                       @(Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")]
+                    : [-21.1775, -47.8103];   // Ribeirão Preto/SP, quando ainda não há ponto
+
+                var m = L.map('mapa-detalhe').setView(centro, temLocal ? 16 : 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(m);
+
+                var cor = '@Model.CorStatus';
+                var marcador = temLocal
+                    ? L.circleMarker(centro, { radius: 9, color: cor, fillColor: cor, fillOpacity: 0.85 }).addTo(m)
+                    : null;
+
+                if (!podeLocalizar) return;
+
+                m.on('click', function (e) {
+                    var lat = e.latlng.lat.toFixed(7), lng = e.latlng.lng.toFixed(7);
+                    document.getElementById('loc-lat').value = lat;
+                    document.getElementById('loc-lng').value = lng;
+                    document.getElementById('loc-texto').textContent = 'Ponto marcado: ' + lat + ', ' + lng;
+                    document.getElementById('loc-salvar').disabled = false;
+                    if (marcador) marcador.setLatLng(e.latlng);
+                    else marcador = L.circleMarker(e.latlng, { radius: 9, color: cor, fillColor: cor, fillOpacity: 0.85 }).addTo(m);
+                });
+            })();
+        </script>
+    }
+}

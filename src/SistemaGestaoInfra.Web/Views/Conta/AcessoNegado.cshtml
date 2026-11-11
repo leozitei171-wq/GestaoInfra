@@ -1,0 +1,12 @@
+@{
+    ViewData["Title"] = "Acesso negado";
+}
+
+<div class="card mx-auto" style="max-width: 520px">
+    <div class="card-body text-center p-5">
+        <i class="bi bi-shield-lock text-danger" style="font-size: 3rem" aria-hidden="true"></i>
+        <h2 class="h4 mt-3">Você não tem permissão para acessar esta página</h2>
+        <p class="text-muted">Se acredita que isso é um erro, fale com o administrador do sistema.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary mt-2">Voltar ao dashboard</a>
+    </div>
+</div>

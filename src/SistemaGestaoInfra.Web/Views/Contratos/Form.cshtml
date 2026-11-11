@@ -1,0 +1,162 @@
+@using SistemaGestaoInfra.Web.Controllers
+@model ContratoFormViewModel
+@{
+    var acao = Model.EhNovo ? "Novo" : "Editar";
+}
+
+<div class="card mx-auto" style="max-width: 1000px">
+    <div class="card-header">@(Model.EhNovo ? "Cadastrar contrato" : $"Editando: {Model.Codigo}")</div>
+    <div class="card-body">
+        <form asp-action="@acao" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" id="form-contrato" novalidate>
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label asp-for="Codigo" class="form-label"></label>
+                    <input asp-for="Codigo" class="form-control text-uppercase" autocomplete="off" />
+                    <span asp-validation-for="Codigo" class="text-danger small"></span>
+                </div>
+                <div class="col-md-8">
+                    <label asp-for="Descricao" class="form-label"></label>
+                    <input asp-for="Descricao" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Descricao" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-5">
+                    <label asp-for="FornecedorId" class="form-label"></label>
+                    <select asp-for="FornecedorId" asp-items="Model.Fornecedores" class="form-select"><option value="">Selecione…</option></select>
+                    <span asp-validation-for="FornecedorId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="SetorId" class="form-label"></label>
+                    <select asp-for="SetorId" asp-items="Model.Setores" class="form-select"><option value="">Nenhum</option></select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label asp-for="DataInicio" class="form-label"></label>
+                    <input asp-for="DataInicio" type="date" class="form-control" />
+                    <span asp-validation-for="DataInicio" class="text-danger small"></span>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label asp-for="DataFim" class="form-label"></label>
+                    <input asp-for="DataFim" type="date" class="form-control" />
+                    <span asp-validation-for="DataFim" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="ArquivoPdf" class="form-label"></label>
+                <input asp-for="ArquivoPdf" type="file" class="form-control" accept="application/pdf" />
+                <div class="form-text">
+                    PDF, até 20 MB.
+                    @if (Model.TemPdf)
+                    {
+                        <a asp-action="Pdf" asp-route-id="@Model.Id" target="_blank" rel="noopener">Ver PDF atual</a>
+                        <span>— enviar outro arquivo substitui o atual.</span>
+                    }
+                </div>
+                <span asp-validation-for="ArquivoPdf" class="text-danger small"></span>
+            </div>
+
+            <div class="d-flex align-items-center mb-2">
+                <h2 class="h6 mb-0 me-auto">Serviços do contrato</h2>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-item"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Adicionar serviço</button>
+            </div>
+
+            <div class="table-responsive mb-2">
+                <table class="table table-sm align-middle" id="tabela-itens">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" style="min-width:200px">Serviço</th>
+                            <th scope="col" style="min-width:130px">Medição</th>
+                            <th scope="col" style="width:120px">Quantidade</th>
+                            <th scope="col" style="width:130px">Unitário (R$)</th>
+                            <th scope="col" style="width:110px">Limite</th>
+                            <th scope="col" class="text-end" style="width:130px">Subtotal (R$)</th>
+                            <th scope="col" style="width:44px"><span class="visually-hidden">Remover</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itens">
+                        @for (var n = 0; n < Model.Itens.Count; n++)
+                        {
+                            <tr class="item-linha">
+                                <td>
+                                    <input type="hidden" name="Itens[@n].Id" value="@Model.Itens[n].Id" />
+                                    <select name="Itens[@n].TipoServicoId" class="form-select form-select-sm" aria-label="Serviço">
+                                        <option value="">Selecione…</option>
+                                        @foreach (var o in Model.Servicos)
+                                        {
+                                            <option value="@o.Value" selected="@(o.Value == Model.Itens[n].TipoServicoId?.ToString())">@o.Text</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="Itens[@n].TipoMedicaoId" class="form-select form-select-sm" aria-label="Medição">
+                                        <option value="">Selecione…</option>
+                                        @foreach (var o in Model.Medicoes)
+                                        {
+                                            <option value="@o.Value" selected="@(o.Value == Model.Itens[n].TipoMedicaoId?.ToString())">@o.Text</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td><input name="Itens[@n].Quantidade" value="@Model.Itens[n].Quantidade" class="form-control form-control-sm item-qtd" inputmode="decimal" aria-label="Quantidade" /></td>
+                                <td><input name="Itens[@n].ValorUnitario" value="@Model.Itens[n].ValorUnitario" class="form-control form-control-sm item-valor" inputmode="decimal" aria-label="Valor unitário" /></td>
+                                <td><input name="Itens[@n].Limite" value="@Model.Itens[n].Limite" class="form-control form-control-sm" inputmode="decimal" aria-label="Limite" /></td>
+                                <td class="text-end item-subtotal">—</td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger btn-remover" aria-label="Remover serviço"><i class="bi bi-x-lg" aria-hidden="true"></i></button></td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="5" class="text-end">Valor total do contrato</th>
+                            <th class="text-end" id="total-contrato">R$ 0,00</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <p class="form-text mb-4">O <strong>limite</strong> é opcional: quantidade máxima que pode ser executada do serviço. O valor total é calculado automaticamente.</p>
+
+            <div class="form-check form-switch mb-4">
+                <input asp-for="Ativo" class="form-check-input" role="switch" />
+                <label asp-for="Ativo" class="form-check-label">Contrato ativo</label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1" aria-hidden="true"></i>Salvar contrato</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Modelo de linha clonado pelo JS; os índices são renumerados ao adicionar/remover. *@
+<template id="modelo-item">
+    <tr class="item-linha">
+        <td>
+            <input type="hidden" name="Itens[__].Id" value="0" />
+            <select name="Itens[__].TipoServicoId" class="form-select form-select-sm" aria-label="Serviço">
+                <option value="">Selecione…</option>
+                @foreach (var o in Model.Servicos) { <option value="@o.Value">@o.Text</option> }
+            </select>
+        </td>
+        <td>
+            <select name="Itens[__].TipoMedicaoId" class="form-select form-select-sm" aria-label="Medição">
+                <option value="">Selecione…</option>
+                @foreach (var o in Model.Medicoes) { <option value="@o.Value">@o.Text</option> }
+            </select>
+        </td>
+        <td><input name="Itens[__].Quantidade" class="form-control form-control-sm item-qtd" inputmode="decimal" aria-label="Quantidade" /></td>
+        <td><input name="Itens[__].ValorUnitario" class="form-control form-control-sm item-valor" inputmode="decimal" aria-label="Valor unitário" /></td>
+        <td><input name="Itens[__].Limite" class="form-control form-control-sm" inputmode="decimal" aria-label="Limite" /></td>
+        <td class="text-end item-subtotal">—</td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger btn-remover" aria-label="Remover serviço"><i class="bi bi-x-lg" aria-hidden="true"></i></button></td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script src="~/js/contrato-form.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,83 @@
+@model StatusAtividadeViewModel
+@{
+    var acao = Model.EhNovo ? "Novo" : "Editar";
+}
+
+<div class="card mx-auto" style="max-width: 620px">
+    <div class="card-header">@(Model.EhNovo ? "Cadastrar status" : $"Editando: {Model.Codigo}")</div>
+    <div class="card-body">
+        <form asp-action="@acao" asp-route-id="@Model.Id" method="post" novalidate>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="EhPadrao" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
+
+            @if (Model.EhPadrao)
+            {
+                <div class="alert alert-info py-2 small" role="note">
+                    <i class="bi bi-shield-check me-1" aria-hidden="true"></i>
+                    Status padrão do sistema: o código e a situação não podem ser alterados.
+                    Você pode ajustar a descrição e a cor.
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="Codigo" class="form-label"></label>
+                @if (Model.EhPadrao)
+                {
+                    <input asp-for="Codigo" class="form-control" readonly aria-readonly="true" />
+                }
+                else
+                {
+                    <input asp-for="Codigo" class="form-control text-uppercase" autocomplete="off" />
+                }
+                <span asp-validation-for="Codigo" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Descricao" class="form-label"></label>
+                <input asp-for="Descricao" class="form-control" autocomplete="off" />
+                <span asp-validation-for="Descricao" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Cor" class="form-label"></label>
+                <div class="input-group">
+                    <input type="color" class="form-control form-control-color" id="corPicker"
+                           value="@Model.Cor" aria-label="Selecionar cor" />
+                    <input asp-for="Cor" class="form-control" autocomplete="off" aria-describedby="ajudaCor" />
+                </div>
+                <div id="ajudaCor" class="form-text">Cor usada nos marcadores do mapa e nas listagens.</div>
+                <span asp-validation-for="Cor" class="text-danger small"></span>
+            </div>
+
+            @if (!Model.EhPadrao)
+            {
+                <div class="form-check form-switch mb-4">
+                    <input asp-for="Ativo" class="form-check-input" role="switch" />
+                    <label asp-for="Ativo" class="form-check-label">Ativo (disponível para seleção)</label>
+                </div>
+            }
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1" aria-hidden="true"></i>Salvar</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Sincroniza o seletor visual de cor com o campo hexadecimal.
+        (function () {
+            var picker = document.getElementById('corPicker');
+            var campo = document.getElementById('Cor');
+            if (!picker || !campo) return;
+            picker.addEventListener('input', function () { campo.value = picker.value; });
+            campo.addEventListener('change', function () {
+                if (/^#[0-9a-fA-F]{6}$/.test(campo.value)) picker.value = campo.value;
+            });
+        })();
+    </script>
+}

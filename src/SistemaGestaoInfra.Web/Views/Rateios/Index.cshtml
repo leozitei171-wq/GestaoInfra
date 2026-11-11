@@ -1,0 +1,61 @@
+@using SistemaGestaoInfra.Domain.Enums
+@using SistemaGestaoInfra.Web.Controllers
+@model IReadOnlyList<RateioLista>
+@{
+    var pt = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+    var pagina = (int)ViewData["Pagina"]!;
+    var totalPaginas = (int)ViewData["TotalPaginas"]!;
+}
+
+<div class="card">
+    <div class="card-header d-flex align-items-center">
+        <span class="me-auto">Rateios realizados</span>
+        <a asp-action="Novo" class="btn btn-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Novo rateio</a>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-pie-chart fs-1 d-block mb-2" aria-hidden="true"></i>
+            Nenhum rateio registrado ainda.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">#</th><th scope="col">Data</th><th scope="col">Descrição</th>
+                        <th scope="col">Tipo de custo</th><th scope="col">Distribuído por</th>
+                        <th scope="col" class="text-end">Itens</th><th scope="col" class="text-end">Valor total</th>
+                        <th scope="col"><span class="visually-hidden">Ações</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        <tr>
+                            <td>@r.Id</td>
+                            <td class="text-nowrap">@r.Data.ToString("dd/MM/yyyy")</td>
+                            <td>@r.Descricao</td>
+                            <td>@(r.TipoCusto ?? "—")</td>
+                            <td>@(r.Modo == ModoRateio.PorContrato ? "Contrato" : "Atividade")</td>
+                            <td class="text-end">@r.Itens</td>
+                            <td class="text-end fw-semibold text-nowrap">@r.ValorTotal.ToString("C2", pt)</td>
+                            <td class="text-end"><a asp-action="Detalhe" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">Ver</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (totalPaginas > 1)
+        {
+            <div class="card-footer d-flex align-items-center gap-2">
+                <span class="small text-muted me-auto">Página @pagina de @totalPaginas</span>
+                <a class="btn btn-sm btn-outline-secondary @(pagina <= 1 ? "disabled" : "")" asp-action="Index" asp-route-pagina="@(pagina - 1)">Anterior</a>
+                <a class="btn btn-sm btn-outline-secondary @(pagina >= totalPaginas ? "disabled" : "")" asp-action="Index" asp-route-pagina="@(pagina + 1)">Próxima</a>
+            </div>
+        }
+    }
+</div>

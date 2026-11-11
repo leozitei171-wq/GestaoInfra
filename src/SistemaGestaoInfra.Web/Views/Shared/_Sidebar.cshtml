@@ -1,0 +1,139 @@
+@{
+    var controllerAtual = ViewContext.RouteData.Values["controller"]?.ToString();
+    var actionAtual = ViewContext.RouteData.Values["action"]?.ToString();
+    var ehAdmin = User.IsInRole(nameof(PerfilUsuario.Admin));
+    var ehGestor = ehAdmin || User.IsInRole(nameof(PerfilUsuario.Gestor));
+
+    string Ativo(string controller, string? action = null) =>
+        string.Equals(controllerAtual, controller, StringComparison.OrdinalIgnoreCase)
+        && (action is null || string.Equals(actionAtual, action, StringComparison.OrdinalIgnoreCase))
+            ? "active" : string.Empty;
+
+    string Aria(string controller, string? action = null) =>
+        Ativo(controller, action) == "active" ? "page" : "false";
+}
+
+<aside class="zt-sidebar" id="zt-sidebar" aria-label="Menu principal">
+    <a class="zt-brand" asp-controller="Home" asp-action="Index">
+        <img src="~/img/zitei-logo.svg" alt="" class="zt-logo" />
+        <span>
+            <span class="zt-brand-name">Zitei</span>
+            <span class="zt-brand-tagline">Gestão de Infraestrutura</span>
+        </span>
+    </a>
+
+    <nav>
+        <ul class="zt-menu">
+            <li>
+                <a class="zt-menu-link @Ativo("Home")" aria-current="@Aria("Home")" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-speedometer2" aria-hidden="true"></i> Dashboard
+                </a>
+            </li>
+
+            <li class="zt-menu-header">Operacional</li>
+            <li>
+                <a class="zt-menu-link @Ativo("Atividades", "Index")" aria-current="@Aria("Atividades", "Index")" asp-controller="Atividades" asp-action="Index">
+                    <i class="bi bi-list-check" aria-hidden="true"></i> Atividades
+                </a>
+            </li>
+            <li>
+                <a class="zt-menu-link @Ativo("Atividades", "Nova")" aria-current="@Aria("Atividades", "Nova")" asp-controller="Atividades" asp-action="Nova">
+                    <i class="bi bi-plus-circle" aria-hidden="true"></i> Nova atividade
+                </a>
+            </li>
+            <li>
+                <a class="zt-menu-link @Ativo("Programacao")" aria-current="@Aria("Programacao")" asp-controller="Programacao" asp-action="Index">
+                    <i class="bi bi-calendar-week" aria-hidden="true"></i> Programação
+                </a>
+            </li>
+            <li>
+                <a class="zt-menu-link @Ativo("Mapa")" aria-current="@Aria("Mapa")" asp-controller="Mapa" asp-action="Index">
+                    <i class="bi bi-geo-alt" aria-hidden="true"></i> Mapa de atividades
+                </a>
+            </li>
+
+            @if (ehGestor)
+            {
+                <li class="zt-menu-header">Gestão</li>
+                <li>
+                    <a class="zt-menu-link @Ativo("Indicadores")" aria-current="@Aria("Indicadores")" asp-controller="Indicadores" asp-action="Index">
+                        <i class="bi bi-bar-chart-line" aria-hidden="true"></i> Indicadores
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("Rateios")" aria-current="@Aria("Rateios")" asp-controller="Rateios" asp-action="Index">
+                        <i class="bi bi-pie-chart" aria-hidden="true"></i> Rateio proporcional
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("AlertasContratos")" aria-current="@Aria("AlertasContratos")" asp-controller="AlertasContratos" asp-action="Index">
+                        <i class="bi bi-bell" aria-hidden="true"></i> Alertas de contratos
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("Auditoria")" aria-current="@Aria("Auditoria")" asp-controller="Auditoria" asp-action="Index">
+                        <i class="bi bi-journal-text" aria-hidden="true"></i> Auditoria
+                    </a>
+                </li>
+
+                <li class="zt-menu-header">Cadastros base</li>
+                <li>
+                    <a class="zt-menu-link @Ativo("Setores")" aria-current="@Aria("Setores")" asp-controller="Setores" asp-action="Index">
+                        <i class="bi bi-diagram-3" aria-hidden="true"></i> Setores
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("TiposAtividade")" aria-current="@Aria("TiposAtividade")" asp-controller="TiposAtividade" asp-action="Index">
+                        <i class="bi bi-tags" aria-hidden="true"></i> Tipos de atividade
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("TiposMedicao")" aria-current="@Aria("TiposMedicao")" asp-controller="TiposMedicao" asp-action="Index">
+                        <i class="bi bi-rulers" aria-hidden="true"></i> Tipos de medição
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("TiposServico")" aria-current="@Aria("TiposServico")" asp-controller="TiposServico" asp-action="Index">
+                        <i class="bi bi-tools" aria-hidden="true"></i> Tipos de serviço
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("TiposCusto")" aria-current="@Aria("TiposCusto")" asp-controller="TiposCusto" asp-action="Index">
+                        <i class="bi bi-cash-coin" aria-hidden="true"></i> Tipos de custo
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("Fornecedores")" aria-current="@Aria("Fornecedores")" asp-controller="Fornecedores" asp-action="Index">
+                        <i class="bi bi-building" aria-hidden="true"></i> Fornecedores
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("Contratos")" aria-current="@Aria("Contratos")" asp-controller="Contratos" asp-action="Index">
+                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i> Contratos
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("Prioridades")" aria-current="@Aria("Prioridades")" asp-controller="Prioridades" asp-action="Index">
+                        <i class="bi bi-flag" aria-hidden="true"></i> Prioridades
+                    </a>
+                </li>
+                <li>
+                    <a class="zt-menu-link @Ativo("StatusAtividade")" aria-current="@Aria("StatusAtividade")" asp-controller="StatusAtividade" asp-action="Index">
+                        <i class="bi bi-circle-half" aria-hidden="true"></i> Status de atividade
+                    </a>
+                </li>
+            }
+
+            @if (ehAdmin)
+            {
+                <li class="zt-menu-header">Administração</li>
+                <li>
+                    <a class="zt-menu-link @Ativo("Usuarios")" aria-current="@Aria("Usuarios")" asp-controller="Usuarios" asp-action="Index">
+                        <i class="bi bi-people" aria-hidden="true"></i> Usuários e perfis
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+</aside>
+<div class="zt-overlay" id="zt-overlay" aria-hidden="true"></div>

@@ -1,0 +1,99 @@
+@using SistemaGestaoInfra.Web.Controllers
+@model TransparenciaViewModel
+@{
+    Layout = "_LayoutPublico";
+
+    Dictionary<string, string?> Rota(int pagina) => new()
+    {
+        ["prefeitura"] = Model.PrefeituraId?.ToString(),
+        ["bairro"] = Model.Bairro,
+        ["statusId"] = Model.StatusId?.ToString(),
+        ["pagina"] = pagina.ToString()
+    };
+}
+
+<h1 class="h4 mb-1">Transparência</h1>
+<p class="text-muted">Acompanhe as demandas registradas na prefeitura. Esta visão pública não mostra quem registrou a demanda nem fotos.</p>
+
+<form method="get" class="card card-body mb-3" role="search">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label for="prefeitura" class="form-label small mb-1">Prefeitura</label>
+            <select id="prefeitura" name="prefeitura" asp-items="Model.Prefeituras" class="form-select form-select-sm" onchange="this.form.submit()">
+                @if (Model.PrefeituraId is null) { <option value="">Selecione…</option> }
+            </select>
+        </div>
+        @if (Model.PrefeituraId is not null)
+        {
+            <div class="col-md-3">
+                <label for="bairro" class="form-label small mb-1">Região / bairro</label>
+                <select id="bairro" name="bairro" asp-items="Model.Bairros" class="form-select form-select-sm"><option value="">Todas</option></select>
+            </div>
+            <div class="col-md-3">
+                <label for="statusId" class="form-label small mb-1">Situação</label>
+                <select id="statusId" name="statusId" asp-items="Model.Status" class="form-select form-select-sm"><option value="">Todas</option></select>
+            </div>
+        }
+        <div class="col-md-2 d-flex gap-1">
+            <button type="submit" class="btn btn-sm btn-primary flex-grow-1">Filtrar</button>
+        </div>
+    </div>
+</form>
+
+@if (Model.PrefeituraId is null)
+{
+    <div class="alert alert-info">Selecione uma prefeitura para consultar as demandas.</div>
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <strong>@Model.PrefeituraNome</strong>
+            <span class="text-muted ms-2">@Model.Total registro(s)</span>
+        </div>
+
+        @if (Model.Itens.Count == 0)
+        {
+            <div class="card-body text-center text-muted py-5">Nenhuma demanda encontrada.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Ref.</th><th scope="col">Descrição</th><th scope="col">Tipo</th>
+                            <th scope="col">Setor</th><th scope="col">Local / região</th><th scope="col">Situação</th>
+                            <th scope="col">%</th><th scope="col">Registro</th><th scope="col"><span class="visually-hidden">Detalhe</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var i in Model.Itens)
+                        {
+                            <tr>
+                                <td>@i.Id</td>
+                                <td style="max-width:320px">@i.Descricao</td>
+                                <td><span class="badge text-bg-light border">@i.Tipo</span></td>
+                                <td>@(i.Setor ?? "—")</td>
+                                <td>@(i.Local ?? "—")</td>
+                                <td class="text-nowrap"><span class="zt-status-dot" style="background:@i.Cor" aria-hidden="true"></span>@i.Situacao</td>
+                                <td>@i.Progresso</td>
+                                <td class="text-nowrap">@i.Registro.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                <td class="text-end"><a asp-action="Ver" asp-route-id="@i.Id" asp-route-prefeitura="@Model.PrefeituraId" class="btn btn-sm btn-outline-primary">Detalhe</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPaginas > 1)
+            {
+                <nav class="card-footer d-flex align-items-center gap-2" aria-label="Paginação">
+                    <small class="text-muted me-auto">Página @Model.Pagina de @Model.TotalPaginas</small>
+                    <a class="btn btn-sm btn-outline-secondary @(Model.Pagina <= 1 ? "disabled" : "")" asp-action="Index" asp-all-route-data="@Rota(Model.Pagina - 1)">Anterior</a>
+                    <a class="btn btn-sm btn-outline-secondary @(Model.Pagina >= Model.TotalPaginas ? "disabled" : "")" asp-action="Index" asp-all-route-data="@Rota(Model.Pagina + 1)">Próxima</a>
+                </nav>
+            }
+        }
+    </div>
+}

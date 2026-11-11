@@ -1,0 +1,101 @@
+@using SistemaGestaoInfra.Domain.Enums
+@using SistemaGestaoInfra.Web.Controllers
+@model RateioFormViewModel
+
+<div class="card mx-auto" style="max-width: 1000px">
+    <div class="card-header">Novo rateio proporcional</div>
+    <div class="card-body">
+        <form asp-action="Novo" method="post" id="form-rateio" novalidate>
+            <div asp-validation-summary="All" class="alert alert-danger py-2" role="alert"></div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label asp-for="ValorTotal" class="form-label fw-semibold"></label>
+                    <input asp-for="ValorTotal" id="valor-total" class="form-control form-control-lg text-primary fw-bold"
+                           inputmode="decimal" placeholder="0,00" autocomplete="off" />
+                    <span asp-validation-for="ValorTotal" class="text-danger small"></span>
+                </div>
+                <div class="col-md-5">
+                    <label asp-for="Descricao" class="form-label fw-semibold"></label>
+                    <input asp-for="Descricao" class="form-control" maxlength="255" placeholder="Ex: Taxa administrativa mensal" autocomplete="off" />
+                    <span asp-validation-for="Descricao" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="DataRateio" class="form-label fw-semibold"></label>
+                    <input asp-for="DataRateio" type="date" class="form-control" />
+                    <span asp-validation-for="DataRateio" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="TipoCustoId" class="form-label fw-semibold"></label>
+                    <select asp-for="TipoCustoId" asp-items="Model.TiposCusto" class="form-select"><option value="">Sem tipo</option></select>
+                </div>
+            </div>
+
+            <fieldset class="mb-4">
+                <legend class="form-label fw-bold fs-6">1. Setores</legend>
+                <div class="row row-cols-1 row-cols-md-2 g-1" id="setores">
+                    @foreach (var s in Model.Setores)
+                    {
+                        <div class="col">
+                            <div class="form-check">
+                                <input class="form-check-input sel-setor" type="checkbox" value="@s.Value" id="setor-@s.Value" />
+                                <label class="form-check-label small" for="setor-@s.Value">@s.Text</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </fieldset>
+
+            <fieldset class="mb-4 d-none" id="bloco-modo">
+                <legend class="form-label fw-bold fs-6">2. Distribuir por</legend>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="Modo" id="modo-atv" value="@((int)ModoRateio.PorAtividade)" checked autocomplete="off" />
+                    <label class="btn btn-outline-primary" for="modo-atv">Por atividade (custo base)</label>
+                    <input type="radio" class="btn-check" name="Modo" id="modo-ctr" value="@((int)ModoRateio.PorContrato)" autocomplete="off" />
+                    <label class="btn btn-outline-primary" for="modo-ctr">Por contrato (valor total)</label>
+                </div>
+            </fieldset>
+
+            <div class="mb-4 d-none" id="bloco-itens">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <span class="form-label fw-bold fs-6 mb-0 me-auto" id="titulo-itens">3. Seleção</span>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary" id="btn-todos">Todos</button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-sem-rateio">Sem rateio</button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-nenhum">Nenhum</button>
+                    </div>
+                </div>
+                <div class="table-responsive border rounded" style="max-height:340px">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width:40px"><span class="visually-hidden">Selecionar</span></th>
+                                <th id="col-rotulo">Item</th>
+                                <th>Descrição</th>
+                                <th class="text-end" id="col-base">Base</th>
+                                <th class="text-end">Prévia (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itens"></tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mt-2">
+                    <span id="resumo-sel">Nenhum item selecionado.</span>
+                    <span id="resumo-soma"></span>
+                </div>
+                <div id="vazio" class="text-muted small mt-2 d-none">Nenhum item elegível nos setores escolhidos. No modo "por atividade", só entram atividades com serviços de contrato lançados.</div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" id="btn-gerar" disabled><i class="bi bi-calculator me-1" aria-hidden="true"></i>Gerar rateio</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="rateio-config" data-url="@Url.Action("Itens", "Rateios")" hidden></div>
+
+@section Scripts {
+    <script src="~/js/rateio-form.js" asp-append-version="true"></script>
+}

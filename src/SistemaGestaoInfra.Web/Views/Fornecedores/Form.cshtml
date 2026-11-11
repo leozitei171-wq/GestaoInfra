@@ -1,0 +1,58 @@
+@using SistemaGestaoInfra.Web.Controllers
+@model FornecedorViewModel
+@{
+    var acao = Model.EhNovo ? "Novo" : "Editar";
+}
+
+<div class="card mx-auto" style="max-width: 680px">
+    <div class="card-header">@(Model.EhNovo ? "Cadastrar fornecedor" : $"Editando: {Model.RazaoSocial}")</div>
+    <div class="card-body">
+        <form asp-action="@acao" asp-route-id="@Model.Id" method="post" novalidate>
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
+
+            <div class="mb-3">
+                <label asp-for="RazaoSocial" class="form-label"></label>
+                <input asp-for="RazaoSocial" class="form-control" autocomplete="off" />
+                <span asp-validation-for="RazaoSocial" class="text-danger small"></span>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-5">
+                    <label asp-for="Cnpj" class="form-label"></label>
+                    <input asp-for="Cnpj" class="form-control" inputmode="numeric" placeholder="00.000.000/0000-00" autocomplete="off" />
+                    <span asp-validation-for="Cnpj" class="text-danger small"></span>
+                </div>
+                <div class="col-md-7">
+                    <label asp-for="Contato" class="form-label"></label>
+                    <input asp-for="Contato" class="form-control" autocomplete="off" />
+                </div>
+            </div>
+            <div class="form-check form-switch mb-4">
+                <input asp-for="Ativo" class="form-check-input" role="switch" />
+                <label asp-for="Ativo" class="form-check-label">Ativo (disponível para novos contratos)</label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1" aria-hidden="true"></i>Salvar</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Máscara de CNPJ enquanto digita; o servidor normaliza e valida os dígitos.
+        (function () {
+            var c = document.getElementById('Cnpj');
+            if (!c) return;
+            c.addEventListener('input', function () {
+                var d = c.value.replace(/\D/g, '').slice(0, 14);
+                var m = d.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+                         .replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2');
+                c.value = m;
+            });
+        })();
+    </script>
+}

@@ -1,0 +1,31 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+
+# Rider
+.idea/
+
+# Uploads (storage local de fotos/PDFs)
+src/SistemaGestaoInfra.Web/App_Data/
+
+# Node (ferramentas de teste/captura)
+govtask-tests/node_modules/
+
+# Ambiente
+*.env
+.env
+!.env.example
+appsettings.*.local.json
+
+# Artefatos de captura/teste
+govtask-tests/capturas*/
+govtask-tests/verificacao-zitei/
+tmp-*
+*.log
+

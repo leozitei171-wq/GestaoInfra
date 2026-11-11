@@ -1,0 +1,105 @@
+@model ProgramacaoViewModel
+@using SistemaGestaoInfra.Web.Controllers
+@{
+    var pt = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+    string Prazo(ProgramacaoItem i) => i.StatusCodigo switch
+    {
+        "CONCL" or "NEGADA" => "—",
+        _ when i.DiasParaFim < 0 => $"{-i.DiasParaFim} dia(s) de atraso",
+        _ when i.DiasParaFim == 0 => "vence hoje",
+        _ => $"em {i.DiasParaFim} dia(s)"
+    };
+    string ClassePrazo(ProgramacaoItem i) => i.StatusCodigo is "CONCL" or "NEGADA" ? "text-muted"
+        : i.DiasParaFim < 0 ? "text-danger fw-semibold"
+        : i.DiasParaFim <= 2 ? "text-warning fw-semibold" : "";
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" role="search" class="row g-2 align-items-end">
+            <div class="col-6 col-md-3">
+                <label for="periodo" class="form-label small mb-1">Período</label>
+                <select id="periodo" name="periodo" class="form-select form-select-sm">
+                    <option value="dia" selected="@(Model.Periodo == "dia")">Dia</option>
+                    <option value="semana" selected="@(Model.Periodo == "semana")">Semana</option>
+                    <option value="mes" selected="@(Model.Periodo == "mes")">Mês</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <label for="referencia" class="form-label small mb-1">Data de referência</label>
+                <input type="date" id="referencia" name="referencia" value="@Model.Referencia.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+            </div>
+            <div class="col-8 col-md-4">
+                <label for="statusId" class="form-label small mb-1">Status</label>
+                <select id="statusId" name="statusId" asp-items="Model.Status" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="col-4 col-md-2">
+                <input type="hidden" name="todos" value="true" />
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-funnel me-1" aria-hidden="true"></i>Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+        <span class="me-auto">
+            @Model.Itens.Count atividade(s) com previsão entre
+            <strong>@Model.De.ToString("dd/MM/yyyy")</strong> e <strong>@Model.Ate.ToString("dd/MM/yyyy")</strong>
+        </span>
+    </div>
+
+    @if (Model.Itens.Count == 0)
+    {
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-calendar-x fs-1 d-block mb-2" aria-hidden="true"></i>
+            Nenhuma atividade programada neste período.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Descrição</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Setor</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Início prev.</th>
+                        <th scope="col">Fim prev.</th>
+                        <th scope="col">Prazo</th>
+                        <th scope="col" style="min-width:100px">Progresso</th>
+                        <th scope="col"><span class="visually-hidden">Ações</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in Model.Itens)
+                    {
+                        <tr>
+                            <td>@i.Id</td>
+                            <td class="text-truncate" style="max-width:240px">@i.Descricao</td>
+                            <td><span class="badge text-bg-light border">@i.Tipo</span></td>
+                            <td>@(i.Setor ?? "—")</td>
+                            <td class="text-nowrap"><span class="zt-status-dot" style="background:@i.CorStatus" aria-hidden="true"></span>@i.Status</td>
+                            <td class="text-nowrap">@(i.Inicio?.ToString("dd/MM/yyyy") ?? "—")</td>
+                            <td class="text-nowrap">@i.Fim.ToString("dd/MM/yyyy")</td>
+                            <td class="text-nowrap @ClassePrazo(i)">@Prazo(i)</td>
+                            <td>
+                                <div class="progress" role="progressbar" aria-label="Progresso da atividade @i.Id"
+                                     aria-valuenow="@i.Progresso" aria-valuemin="0" aria-valuemax="100" style="height:8px">
+                                    <div class="progress-bar" style="width:@i.Progresso%"></div>
+                                </div>
+                                <small class="text-muted">@i.Progresso%</small>
+                            </td>
+                            <td class="text-end"><a asp-controller="Atividades" asp-action="Detalhe" asp-route-id="@i.Id" class="btn btn-sm btn-outline-primary">Ver</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

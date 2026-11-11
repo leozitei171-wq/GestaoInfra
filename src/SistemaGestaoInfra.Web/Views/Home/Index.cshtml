@@ -1,0 +1,94 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var cards = new[]
+    {
+        (Titulo: "Total de atividades", Valor: Model.TotalAtividades, Icone: "bi-clipboard-data", Fundo: "#ccfbf1", Cor: "#0f766e"),
+        (Titulo: "Abertas", Valor: Model.Abertas, Icone: "bi-inbox", Fundo: "#f3e8ff", Cor: "#7e22ce"),
+        (Titulo: "Em andamento", Valor: Model.EmAndamento, Icone: "bi-cone-striped", Fundo: "#fef3c7", Cor: "#b45309"),
+        (Titulo: "Atrasadas", Valor: Model.Atrasadas, Icone: "bi-exclamation-triangle", Fundo: "#fee2e2", Cor: "#b91c1c"),
+        (Titulo: "Concluídas", Valor: Model.Concluidas, Icone: "bi-check2-circle", Fundo: "#dcfce7", Cor: "#15803d")
+    };
+}
+
+<div class="row g-3 mb-4">
+    @foreach (var c in cards)
+    {
+        <div class="col-6 col-md-4 col-xl">
+            <div class="card h-100">
+                <div class="card-body zt-stat">
+                    <span class="zt-stat-icon" style="background:@c.Fundo;color:@c.Cor" aria-hidden="true">
+                        <i class="bi @c.Icone"></i>
+                    </span>
+                    <div>
+                        <div class="zt-stat-value">@c.Valor</div>
+                        <small class="text-muted">@c.Titulo</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">Atividades por status</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var s in Model.PorStatus)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><span class="zt-status-dot" style="background:@s.Cor" aria-hidden="true"></span>@s.Descricao</span>
+                        <span class="badge rounded-pill text-bg-light border">@s.Total</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Atividades recentes</span>
+                <a asp-controller="Atividades" asp-action="Nova" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nova atividade
+                </a>
+            </div>
+            @if (Model.Recentes.Count == 0)
+            {
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true"></i>
+                    Nenhuma atividade registrada ainda.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Descrição</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Abertura</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model.Recentes)
+                            {
+                                <tr>
+                                    <td>@a.Id</td>
+                                    <td class="text-truncate" style="max-width: 260px">@a.Descricao</td>
+                                    <td><span class="badge text-bg-light border">@a.Tipo</span></td>
+                                    <td><span class="zt-status-dot" style="background:@a.CorStatus" aria-hidden="true"></span>@a.Status</td>
+                                    <td>@a.CriadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,108 @@
+@using System.Text.Json
+@using SistemaGestaoInfra.Web.Controllers
+@model IndicadoresViewModel
+@{
+    var pt = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+    var periodos = new[] { (7, "7 dias"), (30, "30 dias"), (90, "90 dias"), (365, "12 meses") };
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <h2 class="h6 mb-0 me-auto text-muted">Período analisado: últimos @Model.DiasPeriodo dias</h2>
+    <nav class="btn-group btn-group-sm" aria-label="Período">
+        @foreach (var (valor, rotulo) in periodos)
+        {
+            <a asp-action="Index" asp-route-dias="@valor"
+               class="btn @(Model.DiasPeriodo == valor ? "btn-primary" : "btn-outline-primary")"
+               aria-current="@(Model.DiasPeriodo == valor ? "true" : null)">@rotulo</a>
+        }
+    </nav>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Capacidade operacional</small>
+            <div class="zt-stat-value mt-1">@Model.EmAndamento</div>
+            <small class="text-muted">em andamento (programadas + em execução)</small>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Taxa de conclusão</small>
+            <div class="zt-stat-value mt-1">@Model.TaxaConclusao.ToString("0.#", pt)%</div>
+            <small class="text-muted">@Model.Concluidas concluída(s) de @Model.Total</small>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Tempo de execução</small>
+            <div class="zt-stat-value mt-1">
+                @(Model.TempoMedioDias is double t ? t.ToString("0.#", pt) + " d" : "—")
+            </div>
+            <small class="text-muted">média da abertura à conclusão</small>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Atrasadas</small>
+            <div class="zt-stat-value mt-1 @(Model.Atrasadas > 0 ? "text-danger" : "")">@Model.Atrasadas</div>
+            <small class="text-muted">com prazo vencido</small>
+        </div></div>
+    </div>
+</div>
+
+@if (Model.Total == 0)
+{
+    <div class="card"><div class="card-body text-center text-muted py-5">
+        <i class="bi bi-bar-chart fs-1 d-block mb-2" aria-hidden="true"></i>
+        Nenhuma atividade registrada neste período.
+    </div></div>
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">Abertas e concluídas por dia</div>
+                <div class="card-body"><div id="graf-linha" role="img" aria-label="Gráfico de linhas de atividades abertas e concluídas por dia"></div></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">Por status</div>
+                <div class="card-body"><div id="graf-status" role="img" aria-label="Gráfico de rosca por status"></div></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Demandas por setor</div>
+                <div class="card-body"><div id="graf-setor" role="img" aria-label="Gráfico de barras de demandas por setor"></div></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Demandas por tipo de atividade</div>
+                <div class="card-body"><div id="graf-tipo" role="img" aria-label="Gráfico de barras de demandas por tipo"></div></div>
+            </div>
+        </div>
+    </div>
+
+    @* Dados serializados pelo servidor; o script lê como JSON, não como código. *@
+    <script type="application/json" id="dados-indicadores">@Html.Raw(JsonSerializer.Serialize(new
+    {
+        setor = Model.PorSetor,
+        tipo = Model.PorTipo,
+        status = Model.PorStatus,
+        cores = Model.CoresStatus,
+        abertas = Model.AbertasPorDia,
+        concluidas = Model.ConcluidasPorDia
+    }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Default }))</script>
+}
+
+@section Scripts {
+    @if (Model.Total > 0)
+    {
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
+        <script src="~/js/indicadores.js" asp-append-version="true"></script>
+    }
+}

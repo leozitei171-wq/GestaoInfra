@@ -1,0 +1,25 @@
+# Artefatos de build
+**/bin/
+**/obj/
+**/.vs/
+
+# Não fazem parte da aplicação
+.git/
+.gitignore
+docs/
+tests/
+govtask-tests/
+*.md
+
+# Dados e segredos locais nunca entram na imagem
+**/App_Data/
+.env
+.env.*
+!.env.example
+**/*.user
+**/appsettings.*.local.json
+
+# Compose/Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore

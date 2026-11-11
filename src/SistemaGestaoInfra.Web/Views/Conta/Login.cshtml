@@ -1,0 +1,53 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Entrar";
+    Layout = "_LayoutAuth";
+}
+
+<div class="zt-auth-card">
+    <div class="zt-brand mb-4 d-lg-none">
+        <img src="~/img/zitei-logo.svg" alt="" class="zt-logo" />
+        <span>
+            <span class="zt-brand-name">Zitei</span>
+            <span class="zt-brand-tagline text-muted">Gestão de Infraestrutura</span>
+        </span>
+    </div>
+
+    <h2 class="h4 fw-bold mb-1">Bem-vindo de volta</h2>
+    <p class="text-muted mb-4">Entre com seu usuário e senha.</p>
+
+    <form asp-action="Login" method="post" novalidate>
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
+
+        <div class="mb-3">
+            <label asp-for="Login" class="form-label">Usuário ou e-mail</label>
+            <input asp-for="Login" class="form-control form-control-lg" autocomplete="username" autofocus />
+            <span asp-validation-for="Login" class="text-danger small"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Senha" class="form-label"></label>
+            <input asp-for="Senha" class="form-control form-control-lg" autocomplete="current-password" />
+            <span asp-validation-for="Senha" class="text-danger small"></span>
+        </div>
+
+        <div class="form-check mb-4">
+            <input asp-for="LembrarMe" class="form-check-input" />
+            <label asp-for="LembrarMe" class="form-check-label">Manter conectado</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100">
+            <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i> Entrar
+        </button>
+    </form>
+
+    <hr class="my-4" />
+    <a asp-controller="Transparencia" asp-action="Index" class="d-block text-center text-decoration-none">
+        <i class="bi bi-eye me-1" aria-hidden="true"></i>Consulta pública — transparência
+    </a>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

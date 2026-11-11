@@ -1,0 +1,185 @@
+@model AtividadeFormViewModel
+@{
+    ViewData["Title"] = "Nova atividade";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+}
+
+<div class="card mx-auto" style="max-width: 820px">
+    <div class="card-header">
+        <div class="fw-semibold">Registrar atividade</div>
+        <small class="text-muted">Informe onde e qual atividade será realizada.</small>
+    </div>
+    <div class="card-body">
+        <ol class="nav nav-pills nav-justified gap-2 mb-4 list-unstyled" id="wiz-nav" aria-label="Etapas">
+            <li><span class="nav-link rounded-pill active" data-pill="1" aria-current="step">1 · Onde</span></li>
+            <li><span class="nav-link rounded-pill disabled" data-pill="2">2 · Detalhes</span></li>
+            <li><span class="nav-link rounded-pill disabled" data-pill="3">3 · Evidência</span></li>
+        </ol>
+
+        <form asp-action="Nova" method="post" enctype="multipart/form-data" id="form-atividade" novalidate>
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
+
+            @* ---------- Passo 1 ---------- *@
+            <section data-step="1" aria-labelledby="passo1">
+                <h2 class="h6 text-muted mb-3" id="passo1">Passo 1 — Tipo e localização</h2>
+
+                <div class="mb-3">
+                    <label asp-for="TipoAtividadeId" class="form-label"></label>
+                    <select asp-for="TipoAtividadeId" asp-items="Model.Tipos" class="form-select">
+                        <option value="">Selecione…</option>
+                    </select>
+                    <span asp-validation-for="TipoAtividadeId" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3 p-3 border rounded bg-light">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-primary" id="btn-gps">
+                            <i class="bi bi-crosshair me-1" aria-hidden="true"></i>Usar minha localização atual
+                        </button>
+                        <span class="small text-muted">Marca onde você está e preenche o endereço sozinho — não precisa digitar.</span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label asp-for="Rua" class="form-label"></label>
+                        <input asp-for="Rua" class="form-control" autocomplete="off" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Numero" class="form-label"></label>
+                        <input asp-for="Numero" class="form-control" autocomplete="off" />
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label asp-for="Bairro" class="form-label"></label>
+                        <input asp-for="Bairro" class="form-control" autocomplete="off" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Cep" class="form-label"></label>
+                        <input asp-for="Cep" class="form-control" inputmode="numeric" placeholder="00000-000" autocomplete="off" />
+                        <span asp-validation-for="Cep" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <button type="button" class="btn btn-outline-secondary" id="btn-localizar">
+                        <i class="bi bi-search me-1" aria-hidden="true"></i>Localizar endereço no mapa
+                    </button>
+                </div>
+                <div id="geo-status" class="small mb-2" role="status" aria-live="polite"></div>
+                <div id="geo-opcoes" class="list-group mb-3 d-none" aria-label="Outros endereços encontrados"></div>
+
+                <div class="mb-2 d-flex align-items-center">
+                    <span class="form-label mb-0 me-auto">Localização no mapa <small class="text-muted">(opcional — clique ou arraste o marcador para ajustar)</small></span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-limpar-mapa">Limpar</button>
+                </div>
+                <div id="mapa-picker" class="border rounded mb-2" style="height:300px" role="application"
+                     aria-label="Mapa para marcar a localização da atividade"></div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label asp-for="Latitude" class="form-label"></label>
+                        <input asp-for="Latitude" class="form-control" inputmode="decimal" placeholder="-21.1775" />
+                        <span asp-validation-for="Latitude" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="Longitude" class="form-label"></label>
+                        <input asp-for="Longitude" class="form-control" inputmode="decimal" placeholder="-47.8103" />
+                        <span asp-validation-for="Longitude" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-primary" data-next="2">Continuar</button>
+                </div>
+            </section>
+
+            @* ---------- Passo 2 ---------- *@
+            <section data-step="2" class="d-none" aria-labelledby="passo2">
+                <h2 class="h6 text-muted mb-3" id="passo2">Passo 2 — Prioridade e descrição</h2>
+
+                <div id="geo-aviso-passo2" class="alert alert-warning py-2 small d-none" role="status"></div>
+
+                <div class="mb-3">
+                    <label asp-for="PrioridadeId" class="form-label"></label>
+                    <select asp-for="PrioridadeId" asp-items="Model.Prioridades" class="form-select">
+                        <option value="">Selecione…</option>
+                    </select>
+                    <span asp-validation-for="PrioridadeId" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Descricao" class="form-label"></label>
+                    <textarea asp-for="Descricao" class="form-control" rows="4" maxlength="2000"></textarea>
+                    <span asp-validation-for="Descricao" class="text-danger small"></span>
+                </div>
+
+                <div class="form-check mb-2">
+                    <input asp-for="Requerimento" class="form-check-input" />
+                    <label asp-for="Requerimento" class="form-check-label">Esta atividade tem requerimento</label>
+                </div>
+
+                <div id="bloco-req" class="border rounded p-3 bg-light mb-3 d-none">
+                    <div class="mb-3">
+                        <label asp-for="NumeroRequerimento" class="form-label">Número do requerimento <span class="text-danger">*</span></label>
+                        <input asp-for="NumeroRequerimento" class="form-control" autocomplete="off" />
+                        <span asp-validation-for="NumeroRequerimento" class="text-danger small"></span>
+                    </div>
+                    <div>
+                        <label asp-for="ArquivoRequerimento" class="form-label">Anexar arquivo <small class="text-muted">(opcional)</small></label>
+                        <input asp-for="ArquivoRequerimento" type="file" class="form-control" accept="application/pdf,image/jpeg,image/png" />
+                        <div class="form-text">PDF, JPEG ou PNG. Máx. 15 MB.</div>
+                        <span asp-validation-for="ArquivoRequerimento" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-prev="1">Voltar</button>
+                    <button type="button" class="btn btn-primary" data-next="3">Continuar</button>
+                </div>
+            </section>
+
+            @* ---------- Passo 3 ---------- *@
+            <section data-step="3" class="d-none" aria-labelledby="passo3">
+                <h2 class="h6 text-muted mb-3" id="passo3">Passo 3 — Foto de evidência <small>(opcional)</small></h2>
+
+                <div class="mb-3">
+                    <label asp-for="Foto" class="form-label">Foto</label>
+                    <input asp-for="Foto" type="file" class="form-control" accept="image/jpeg,image/png" capture="environment" />
+                    <div class="form-text">JPEG ou PNG, até 5 MB. No celular, abre direto a câmera.</div>
+                    <span asp-validation-for="Foto" class="text-danger small"></span>
+                </div>
+                <div id="preview-foto" class="mb-3 d-none">
+                    <img alt="Pré-visualização da foto selecionada" class="img-thumbnail" style="max-height:220px" />
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-prev="2">Voltar</button>
+                    <div class="d-flex gap-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary" id="btn-enviar">
+                            <i class="bi bi-check-lg me-1" aria-hidden="true"></i>Registrar atividade
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="~/js/atividade-wizard.js" asp-append-version="true"></script>
+    <div id="geo-config" hidden
+         data-buscar="@Url.Action("Buscar", "Geocodificacao")"
+         data-reverso="@Url.Action("Reverso", "Geocodificacao")"></div>
+    <script src="~/js/atividade-geo.js" asp-append-version="true"></script>
+}

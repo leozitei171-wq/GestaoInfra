@@ -1,0 +1,44 @@
+@using SistemaGestaoInfra.Web.Controllers
+@model TransparenciaDetalheViewModel
+@{
+    Layout = "_LayoutPublico";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-action="Index" asp-route-prefeitura="@Model.PrefeituraId">Transparência</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Demanda #@Model.Id</li>
+    </ol>
+</nav>
+
+<div class="card">
+    <div class="card-header d-flex align-items-center">
+        <span class="me-auto">Demanda #@Model.Id — @Model.PrefeituraNome</span>
+        <span class="badge rounded-pill" style="background:@Model.Cor;color:#111">@Model.Situacao</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">Visão pública: sem identificação de quem registrou a demanda. Evidências fotográficas ficam restritas ao acesso interno.</p>
+        <h2 class="h6">Descrição</h2>
+        <p style="white-space:pre-wrap">@Model.Descricao</p>
+        <hr />
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Tipo</dt><dd class="col-sm-9">@Model.Tipo</dd>
+            <dt class="col-sm-3">Setor</dt><dd class="col-sm-9">@(Model.Setor ?? "—")</dd>
+            <dt class="col-sm-3">Local / região</dt><dd class="col-sm-9">@(Model.Local ?? "—")</dd>
+            <dt class="col-sm-3">Prioridade</dt><dd class="col-sm-9">@Model.Prioridade</dd>
+            <dt class="col-sm-3">Progresso</dt>
+            <dd class="col-sm-9">
+                <div class="progress mb-1" role="progressbar" aria-label="Progresso" aria-valuenow="@Model.Progresso" aria-valuemin="0" aria-valuemax="100" style="height:8px">
+                    <div class="progress-bar" style="width:@Model.Progresso%"></div>
+                </div>
+                <small class="text-muted">@Model.Progresso%</small>
+            </dd>
+            <dt class="col-sm-3">Início previsto</dt><dd class="col-sm-9">@(Model.InicioPrevisto?.ToString("dd/MM/yyyy") ?? "—")</dd>
+            <dt class="col-sm-3">Fim previsto</dt><dd class="col-sm-9">@(Model.FimPrevisto?.ToString("dd/MM/yyyy") ?? "—")</dd>
+            <dt class="col-sm-3">Registro</dt><dd class="col-sm-9">@Model.Registro.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+        </dl>
+    </div>
+    <div class="card-footer">
+        <a asp-action="Index" asp-route-prefeitura="@Model.PrefeituraId" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Voltar à lista</a>
+    </div>
+</div>

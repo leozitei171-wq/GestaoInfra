@@ -1,0 +1,64 @@
+@using SistemaGestaoInfra.Domain.Enums
+@using SistemaGestaoInfra.Web.Controllers
+@model RateioDetalheViewModel
+@{
+    var pt = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+}
+
+<div class="card mb-3">
+    <div class="card-header d-flex align-items-center">
+        <span class="me-auto">Rateio #@Model.Id</span>
+        <span class="badge text-bg-light border">Por @(Model.Modo == ModoRateio.PorContrato ? "contrato" : "atividade")</span>
+    </div>
+    <div class="card-body">
+        <p class="fs-6 mb-3">@Model.Descricao</p>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Valor total</dt><dd class="col-sm-9 fw-bold text-primary">@Model.ValorTotal.ToString("C2", pt)</dd>
+            <dt class="col-sm-3">Data</dt><dd class="col-sm-9">@Model.Data.ToString("dd/MM/yyyy")</dd>
+            <dt class="col-sm-3">Tipo de custo</dt><dd class="col-sm-9">@(Model.TipoCusto ?? "—")</dd>
+            <dt class="col-sm-3">Registrado por</dt><dd class="col-sm-9">@(Model.CriadoPor ?? "—") em @Model.CriadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">Distribuição</div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">@(Model.Modo == ModoRateio.PorContrato ? "Contrato" : "Atividade")</th>
+                    <th scope="col">Descrição</th>
+                    <th scope="col" class="text-end">@(Model.Modo == ModoRateio.PorContrato ? "Valor do contrato" : "Custo base")</th>
+                    <th scope="col" class="text-end">%</th>
+                    <th scope="col" class="text-end">Valor rateado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Model.Itens)
+                {
+                    <tr>
+                        <td class="fw-semibold">@i.Rotulo</td>
+                        <td class="text-truncate" style="max-width:340px">@i.Detalhe</td>
+                        <td class="text-end">@i.Base.ToString("C2", pt)</td>
+                        <td class="text-end">@i.Percentual.ToString("0.##", pt)%</td>
+                        <td class="text-end fw-semibold">@i.Valor.ToString("C2", pt)</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="4" class="text-end">Soma das parcelas</th>
+                    <th class="text-end">@Model.SomaItens.ToString("C2", pt)</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<div class="d-flex gap-2">
+    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Voltar</a>
+    <form asp-action="Excluir" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Excluir este rateio? A exclusão fica registrada na auditoria.');">
+        <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash me-1" aria-hidden="true"></i>Excluir rateio</button>
+    </form>
+</div>

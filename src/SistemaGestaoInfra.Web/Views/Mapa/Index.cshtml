@@ -1,0 +1,85 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var legenda = (List<(string Descricao, string Cor)>)ViewData["Legenda"]!;
+    var status = (List<SelectListItem>)ViewData["Status"]!;
+    var setores = (List<SelectListItem>)ViewData["Setores"]!;
+    var tipos = (List<SelectListItem>)ViewData["Tipos"]!;
+    var prioridades = (List<SelectListItem>)ViewData["Prioridades"]!;
+    var bairros = (List<SelectListItem>)ViewData["Bairros"]!;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form id="mapa-filtros" class="row g-2 align-items-end" role="search">
+            <div class="col-6 col-lg-2">
+                <label for="f_status" class="form-label small mb-1">Status</label>
+                <select id="f_status" asp-items="status" class="form-select form-select-sm"><option value="">Todos</option></select>
+            </div>
+            <div class="col-6 col-lg-2">
+                <label for="f_bairro" class="form-label small mb-1">Bairro</label>
+                <select id="f_bairro" asp-items="bairros" class="form-select form-select-sm"><option value="">Todos</option></select>
+            </div>
+            <div class="col-6 col-lg-2">
+                <label for="f_setor" class="form-label small mb-1">Setor</label>
+                <select id="f_setor" asp-items="setores" class="form-select form-select-sm"><option value="">Todos</option></select>
+            </div>
+            <div class="col-6 col-lg-2">
+                <label for="f_tipo" class="form-label small mb-1">Tipo</label>
+                <select id="f_tipo" asp-items="tipos" class="form-select form-select-sm"><option value="">Todos</option></select>
+            </div>
+            <div class="col-6 col-lg-1">
+                <label for="f_prioridade" class="form-label small mb-1">Prioridade</label>
+                <select id="f_prioridade" asp-items="prioridades" class="form-select form-select-sm"><option value="">Todas</option></select>
+            </div>
+            <div class="col-6 col-lg-1">
+                <label for="f_de" class="form-label small mb-1">De</label>
+                <input type="date" id="f_de" class="form-control form-control-sm px-1" />
+            </div>
+            <div class="col-6 col-lg-1">
+                <label for="f_ate" class="form-label small mb-1">Até</label>
+                <input type="date" id="f_ate" class="form-control form-control-sm px-1" />
+            </div>
+            <div class="col-6 col-lg-1 d-flex gap-1">
+                <button type="button" id="btn-limpar" class="btn btn-sm btn-outline-secondary flex-grow-1" aria-label="Limpar filtros">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+        </form>
+
+        <div class="d-flex flex-wrap align-items-center gap-3 mt-3 small">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="f_auto" checked />
+                <label class="form-check-label" for="f_auto">Atualização automática</label>
+            </div>
+            <span class="text-muted" id="mapa-countdown" aria-live="off">próxima atualização em 10s</span>
+            <span class="text-muted ms-auto">Última atualização: <span id="mapa-ultima">—</span></span>
+            <span class="badge text-bg-light border" id="mapa-contagem" role="status">0 no mapa</span>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-3 mt-2 small" aria-label="Legenda">
+            <strong>Legenda:</strong>
+            @foreach (var l in legenda)
+            {
+                <span><span class="zt-status-dot" style="background:@l.Cor" aria-hidden="true"></span>@l.Descricao</span>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-warning py-2 d-none" id="mapa-aviso" role="alert"></div>
+
+<div class="card">
+    <div id="mapa" data-url="@Url.Action("Dados", "Mapa")" style="height: calc(100vh - 380px); min-height: 420px"
+         role="application" aria-label="Mapa com as atividades registradas"></div>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="~/js/mapa.js" asp-append-version="true"></script>
+}
